@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Randomizer 5 Ronde — Editable SPIN & Background Web</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: linear-gradient(135deg,#0f172a 0%, #0b2545 100%);
+  --text:#e6eef8;--muted:#9fb0d6;--accent:#7c3aed;--glass:rgba(255,255,255,0.04)
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+  background:var(--bg);color:var(--text);
+  padding:24px;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;
+}
+.app{
+  width:100%;max-width:1200px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:18px;
+  box-shadow:0 10px 30px rgba(2,6,23,.6);backdrop-filter:blur(8px)
+}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:10px}
+.logo{
+  width:70px;height:70px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#2563eb);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;
+  box-shadow:0 5px 15px rgba(0,0,0,.3)
+}
+.logo span{font-weight:800;font-size:20px;color:white}
+.editable{outline:none;border-radius:6px}
+.editable:focus{background:rgba(255,255,255,.08)}
+.titles{display:flex;flex-direction:column}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.panel{display:flex;gap:6px;align-items:center;background:var(--glass);padding:8px;border-radius:10px}
+input,select{background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);padding:6px 8px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;margin-bottom:8px}
+.tab{border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px 10px;cursor:pointer}
+.tab.active{background:linear-gradient(90deg,var(--accent),#2563eb);border:none}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:10px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+.card{
+  background-size:cover;background-position:center;border-radius:12px;border:1px solid rgba(255,255,255,.05);
+  padding:12px;min-height:130px;display:flex;flex-direction:column;justify-content:space-between;position:relative;
+}
+.card::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.4);border-radius:12px}
+.card>*{position:relative;z-index:1}
+.label{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.batch-name.editable{font-weight:700;font-size:14px;color:var(--text)}
+.slot{perspective:800px;display:flex;justify-content:center;align-items:center}
+.flip{min-width:90px;padding:12px 14px;border-radius:8px;background:rgba(0,0,0,.5);
+  font-size:26px;font-weight:900;color:var(--text);transition:transform .6s,filter .3s}
+.spin-active .flip{animation:wobble 900ms ease-in-out infinite;filter:blur(.5px);transform:rotateX(360deg)}
+@keyframes wobble{0%{transform:rotateX(0)}50%{transform:rotateX(180deg)}100%{transform:rotateX(360deg)}}
+.batch-buttons{display:flex;gap:6px;justify-content:center}
+.btn-mini{background:rgba(255,255,255,.12);border:none;border-radius:8px;padding:4px 8px;color:var(--text);cursor:pointer;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.btn{background:linear-gradient(90deg,var(--accent),#2563eb);border:none;color:white;padding:10px 14px;font-weight:700;border-radius:10px;cursor:pointer}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:10px;padding:8px 12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand" style="display:flex;gap:10px;align-items:center">
+      <div class="logo" id="logo"><span id="logoText" contenteditable="true" style="outline:none">SPIN</span></div>
+      <div class="titles">
+        <h1 class="editable" contenteditable="true" style="font-size:18px;font-weight:800;margin:0;">Randomizer — 5 Ronde</h1>
+        <p class="editable" contenteditable="true" style="font-size:13px;color:#9fb0d6;margin:0;">Klik logo untuk ganti gambar, teks logo dapat diketik ulang, dan ubah background web di bawah.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="panel"><label>Min</label><input id="min" type="number" value="1"></div>
+      <div class="panel"><label>Max</label><input id="max" type="number" value="1300"></div>
+      <div class="panel"><label>Durasi</label><input id="duration" type="number" value="1" min="0.5" max="10" step="0.5"></div>
+      <div class="panel"><label>Duplikat</label>
+        <select id="allowDup"><option value="0">Tidak (unik)</option><option value="1" selected>Boleh</option></select>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="actions">
+    <button class="btn editable" id="spinBtn" contenteditable="true">🎲 Spin Ronde Ini</button>
+    <button class="ghost" id="bgWeb">🖼️ Ganti Background Web</button>
+    <button class="ghost" id="nextRound">➡️ Next Round</button>
+    <button class="ghost" id="resetRound">⟲ Reset</button>
+  </div>
+</div>
+
+<script>
+const ROUNDS=5,BATCH_PER_ROUND=10,STORE_KEY='rndr_spin_editbg_v1';
+const DEFAULT_ROUND_NAMES=['Ronde 1','Ronde 2','Ronde 3','Ronde 4','Ronde 5'];
+const DEFAULT_BATCH_NAMES=['Batch A','Batch B','Batch C','Batch D','Batch E','Batch F','Batch G','Batch H','Batch I','Batch J'];
+const state={activeRound:0,rounds:[],usedNumbers:[]};
+
+function loadState(){
+  const s=localStorage.getItem(STORE_KEY);
+  if(s){try{const o=JSON.parse(s);if(o.rounds?.length===ROUNDS){Object.assign(state,o);return;}}catch{}}
+  state.rounds=Array.from({length:ROUNDS},(_,r)=>({name:DEFAULT_ROUND_NAMES[r],
+    batches:Array.from({length:BATCH_PER_ROUND},(_,i)=>({name:DEFAULT_BATCH_NAMES[i],value:'—',image:null}))}));
+  state.usedNumbers=[];
+}
+function saveState(){localStorage.setItem(STORE_KEY,JSON.stringify(state));}
+
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+const tabs=document.getElementById('tabs'),grid=document.getElementById('grid');
+function renderTabs(){
+  tabs.innerHTML='';
+  state.rounds.forEach((r,i)=>{
+    const t=document.createElement('button');
+    t.className='tab'+(i===state.activeRound?' active':'');
+    t.textContent=r.name;
+    t.onclick=()=>{state.activeRound=i;saveState();renderTabs();renderGrid();}
+    tabs.appendChild(t);
+  });
+}
+
+function makeCard(rIdx,bIdx){
+  const r=state.rounds[rIdx],b=r.batches[bIdx];
+  const c=document.createElement('div');c.className='card';
+  if(b.image)c.style.background=`url('${b.image}') center/cover`;else c.style.background='rgba(255,255,255,0.03)';
+  const label=document.createElement('div');label.className='label';
+  const bname=document.createElement('span');bname.className='batch-name editable';bname.contentEditable='true';bname.textContent=b.name;
+  bname.oninput=()=>{b.name=bname.textContent.trim();saveState();};
+  const imgBtn=document.createElement('button');imgBtn.className='btn-mini';imgBtn.textContent='🖼️';
+  imgBtn.onclick=()=>{
+    const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+    inp.onchange=e=>{
+      const f=e.target.files[0];if(!f)return;
+      const rfile=new FileReader();rfile.onload=ev=>{b.image=ev.target.result;c.style.background=`url('${b.image}') center/cover`;saveState();};
+      rfile.readAsDataURL(f);
+    };
+    inp.click();
+  };
+  label.append(bname,imgBtn);
+  const slot=document.createElement('div');slot.className='slot';
+  const flip=document.createElement('div');flip.className='flip';flip.textContent=b.value??'—';slot.appendChild(flip);
+  const meta=document.createElement('div');meta.className='batch-buttons';
+  const spinBtn=document.createElement('button');spinBtn.className='btn-mini';spinBtn.textContent='🎲';
+  spinBtn.onclick=()=>spinBatch(rIdx,bIdx,flip);
+  meta.appendChild(spinBtn);
+  c.append(label,slot,meta);
+  return c;
+}
+
+function renderGrid(){
+  grid.innerHTML='';state.rounds[state.activeRound].batches.forEach((_,i)=>grid.appendChild(makeCard(state.activeRound,i)));
+}
+
+function getUnique(min,max){
+  const avail=[];for(let i=min;i<=max;i++)if(!state.usedNumbers.includes(i))avail.push(i);
+  if(avail.length===0)return null;
+  const n=avail[Math.floor(Math.random()*avail.length)];
+  state.usedNumbers.push(n);return n;
+}
+
+async function spinBatch(rIdx,bIdx,flipEl){
+  const dur=+document.getElementById('duration').value*1000;
+  const min=+document.getElementById('min').value,max=+document.getElementById('max').value;
+  const unique=document.getElementById('allowDup').value==='0';
+  const start=performance.now();flipEl.parentElement.parentElement.classList.add('spin-active');
+  let raf;
+  function frame(now){
+    if(now-start<dur){flipEl.textContent=randInt(min,max);raf=requestAnimationFrame(frame);}
+    else{
+      cancelAnimationFrame(raf);
+      let num=unique?getUnique(min,max):randInt(min,max);
+      if(num===null){alert('Semua angka sudah digunakan!');num='—';}
+      flipEl.textContent=num;state.rounds[rIdx].batches[bIdx].value=num;
+      flipEl.parentElement.parentElement.classList.remove('spin-active');saveState();
+    }
+  }
+  raf=requestAnimationFrame(frame);
+}
+
+async function spinRound(i){
+  const bs=grid.querySelectorAll('.flip');
+  for(let x=0;x<bs.length;x++)await spinBatch(i,x,bs[x]);
+}
+
+document.getElementById('spinBtn').onclick=()=>spinRound(state.activeRound);
+document.getElementById('nextRound').onclick=()=>{state.activeRound=(state.activeRound+1)%ROUNDS;saveState();renderTabs();renderGrid();};
+document.getElementById('resetRound').onclick=()=>{state.rounds[state.activeRound].batches.forEach(b=>{b.value='—';b.image=null;});state.usedNumbers=[];saveState();renderGrid();};
+document.getElementById('bgWeb').onclick=()=>{
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();r.onload=ev=>{document.body.style.background=`url('${ev.target.result}') center/cover fixed`;};
+    r.readAsDataURL(f);
+  };
+  inp.click();
+};
+
+document.getElementById('logo').onclick=()=>{
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();r.onload=ev=>{document.getElementById('logo').style.background=`url('${ev.target.result}') center/cover`;};
+    r.readAsDataURL(f);
+  };
+  inp.click();
+};
+
+loadState();renderTabs();renderGrid();
+</script>
+</body>
+</html>
